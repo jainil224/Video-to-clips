@@ -34,6 +34,9 @@ function ytdlp() {
   throw new Error('yt-dlp not found. Run npm run setup');
 }
 
+// Bypasses YouTube bot/sign-in check by using the mobile android client
+const YOUTUBE_CLIENT_ARGS = ['--extractor-args', 'youtube:player_client=android,web'];
+
 function validateStreamUrl(rawUrl) {
   let parsed;
   try {
@@ -122,6 +125,7 @@ function getVideoInfo(url) {
     const p = spawn(ytdlpBin, [
       '--no-warnings', '--no-progress',
       '-J', '--ignore-config', '--no-playlist',
+      ...YOUTUBE_CLIENT_ARGS,
       url
     ], { stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
@@ -156,6 +160,7 @@ function startChatMonitor(url, sessionId) {
     '--no-warnings',
     '--ignore-config',
     '--no-playlist',
+    ...YOUTUBE_CLIENT_ARGS,
     '--skip-download',
     '--write-subs',
     '--sub-langs', 'live_chat',
@@ -316,6 +321,7 @@ async function startLiveSession(rawUrl) {
     '--no-warnings',
     '--ignore-config',
     '--no-playlist',
+    ...YOUTUBE_CLIENT_ARGS,
     '-f', 'worstaudio[ext=m4a]/worstaudio/bestaudio/best',
     '--no-part',
     '-o', '-',
