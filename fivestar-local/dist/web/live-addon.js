@@ -539,13 +539,13 @@
       }, 1000);
     }
 
-    if (d.type === 'chunk' || d.type === 'highlight') {
+    if (d.type === 'chunk') {
       const m = d.moment;
       if (m.isHighlight) {
         hlCount++;
         document.getElementById('stat-hl-count').textContent = hlCount;
-        renderMomentCard(m);
       }
+      renderMomentCard(m);
     }
 
     if (d.type === 'chat') {

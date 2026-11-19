@@ -34,7 +34,6 @@ function ytdlp() {
   throw new Error('yt-dlp not found. Run npm run setup');
 }
 
-// Bypasses YouTube bot/sign-in check by using the mobile android client
 const YOUTUBE_CLIENT_ARGS = ['--extractor-args', 'youtube:player_client=android,web'];
 
 function validateStreamUrl(rawUrl) {
@@ -168,52 +167,101 @@ function startChatMonitor(url, sessionId) {
     url
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-  const chatFile = path.join(TMP_DIR, `${sessionId}-chat.live_chat.json`);
-  let lastSize = 0;
-  let buffer = '';
+  const fileOffsets = new Map();
+  const fileBuffers = new Map();
 
   const chatInterval = setInterval(() => {
     const s = session;
     if (!s || s.id !== sessionId) { clearInterval(chatInterval); return; }
-    if (!fs.existsSync(chatFile)) return;
+
+    // Look for chat files: .part and .live_chat.json, plus initial Frag1
+    let candidateFiles = [];
     try {
-      const stat = fs.statSync(chatFile);
-      if (stat.size <= lastSize) return;
-      const fd = fs.openSync(chatFile, 'r');
-      const buf = Buffer.alloc(stat.size - lastSize);
-      fs.readSync(fd, buf, 0, buf.length, lastSize);
-      fs.closeSync(fd);
-      lastSize = stat.size;
-      buffer += buf.toString('utf8');
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const obj = JSON.parse(line);
-          const action = obj?.replayChatItemAction;
-          if (!action) continue;
-          const timeSec = Number(action.videoOffsetTimeMsec || 0) / 1000;
-          for (const act of action.actions ?? []) {
-            const item = act?.addChatItemAction?.item;
-            if (!item) continue;
-            const renderer = item.liveChatTextMessageRenderer || item.liveChatPaidMessageRenderer;
-            if (!renderer) continue;
-            const author = renderer.authorName?.simpleText ?? '';
-            if (BOT_PATTERN.test(author)) continue;
-            const text = (renderer.message?.runs ?? [])
-              .map(r => r.text || (r.emoji ? (r.emoji.shortcuts?.[0] ?? '') : ''))
-              .join('').trim();
-            if (!text) continue;
-            const isFunny = FUNNY_PATTERN.test(text);
-            s.chatMessages.push({ t: timeSec || s.elapsed, author, text, funny: isFunny });
-            if (isFunny) s.chatFunnyCount++;
-            if (s.chatMessages.length > 500) s.chatMessages.shift();
-            broadcast({ type: 'chat', msg: { author, text, funny: isFunny, t: timeSec || s.elapsed } });
+      candidateFiles = fs.readdirSync(TMP_DIR)
+        .filter(f => f.startsWith(`${sessionId}-chat.live_chat.json`))
+        .filter(f => !f.includes('-Frag') || f.endsWith('-Frag1'))
+        .map(f => path.join(TMP_DIR, f));
+    } catch { return; }
+
+    for (const chatFile of candidateFiles) {
+      try {
+        const stat = fs.statSync(chatFile);
+        const lastSize = fileOffsets.get(chatFile) || 0;
+        if (stat.size <= lastSize) continue;
+
+        // If it's Frag1 (initial HTML page from YouTube), extract ytInitialData
+        if (chatFile.endsWith('-Frag1')) {
+          if (!fileOffsets.has(chatFile)) {
+            fileOffsets.set(chatFile, stat.size);
+            const content = fs.readFileSync(chatFile, 'utf8');
+            const m = content.match(/window\["ytInitialData"\]\s*=\s*(\{.*?\});\s*<\/script>/s);
+            if (m) {
+              try {
+                const data = JSON.parse(m[1]);
+                const actions = data?.continuationContents?.liveChatContinuation?.actions || [];
+                for (const a of actions) {
+                  if (!a.addChatItemAction) continue;
+                  const item = a.addChatItemAction.item;
+                  const renderer = item?.liveChatTextMessageRenderer || item?.liveChatPaidMessageRenderer;
+                  if (!renderer) continue;
+                  const author = renderer.authorName?.simpleText ?? '';
+                  if (BOT_PATTERN.test(author)) continue;
+                  const text = (renderer.message?.runs ?? [])
+                    .map(r => r.text || (r.emoji ? (r.emoji.shortcuts?.[0] ?? '') : ''))
+                    .join('').trim();
+                  if (!text) continue;
+                  const isFunny = FUNNY_PATTERN.test(text);
+                  s.chatMessages.push({ t: s.elapsed, author, text, funny: isFunny });
+                  if (isFunny) s.chatFunnyCount++;
+                  if (s.chatMessages.length > 500) s.chatMessages.shift();
+                  broadcast({ type: 'chat', msg: { author, text, funny: isFunny, t: s.elapsed } });
+                }
+              } catch {}
+            }
           }
-        } catch {}
-      }
-    } catch {}
+          continue;
+        }
+
+        const fd = fs.openSync(chatFile, 'r');
+        const readLen = stat.size - lastSize;
+        const buf = Buffer.alloc(readLen);
+        fs.readSync(fd, buf, 0, readLen, lastSize);
+        fs.closeSync(fd);
+        fileOffsets.set(chatFile, stat.size);
+
+        let curBuffer = (fileBuffers.get(chatFile) || '') + buf.toString('utf8');
+        const lines = curBuffer.split('\n');
+        curBuffer = lines.pop() ?? '';
+        fileBuffers.set(chatFile, curBuffer);
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const obj = JSON.parse(line);
+            const action = obj?.replayChatItemAction;
+            if (!action) continue;
+            const timeSec = Number(action.videoOffsetTimeMsec || 0) / 1000;
+            for (const act of action.actions ?? []) {
+              const item = act?.addChatItemAction?.item;
+              if (!item) continue;
+              const renderer = item.liveChatTextMessageRenderer || item.liveChatPaidMessageRenderer;
+              if (!renderer) continue;
+              const author = renderer.authorName?.simpleText ?? '';
+              if (BOT_PATTERN.test(author)) continue;
+              const text = (renderer.message?.runs ?? [])
+                .map(r => r.text || (r.emoji ? (r.emoji.shortcuts?.[0] ?? '') : ''))
+                .join('').trim();
+              if (!text) continue;
+              const isFunny = FUNNY_PATTERN.test(text);
+              s.chatMessages.push({ t: timeSec || s.elapsed, author, text, funny: isFunny });
+              if (isFunny) s.chatFunnyCount++;
+              if (s.chatMessages.length > 500) s.chatMessages.shift();
+              broadcast({ type: 'chat', msg: { author, text, funny: isFunny, t: timeSec || s.elapsed } });
+            }
+          } catch {}
+        }
+      } catch {}
+    }
   }, 1000);
 
   p.on('close', () => clearInterval(chatInterval));
@@ -227,16 +275,18 @@ async function analyseChunk(chunkFile, chunkIndex, chunkStartSec, currentSession
     ffprobeDuration(chunkFile),
   ]);
 
+  const effectiveDur = duration > 0 ? duration : 20;
+
   const chatWindow = currentSession.chatMessages.filter(m =>
-    m.t >= chunkStartSec && m.t < chunkStartSec + duration
+    m.t >= chunkStartSec && m.t < chunkStartSec + effectiveDur
   );
   const funnyChatCount = chatWindow.filter(m => m.funny).length;
   const totalChatCount = chatWindow.length;
 
   const baselineMean = currentSession.baselineMean ?? -30;
   const audioScore = Math.max(0, Math.min(100, (loudness.max - baselineMean) * 3));
-  const chatScore = Math.min(100, funnyChatCount * 15 + totalChatCount * 2);
-  const totalScore = Math.round(audioScore * 0.55 + chatScore * 0.45);
+  const chatScore = Math.min(100, funnyChatCount * 20 + totalChatCount * 3);
+  const totalScore = Math.round(audioScore * 0.5 + chatScore * 0.5);
 
   if (currentSession.baselineMean == null) {
     currentSession.baselineMean = loudness.mean;
@@ -248,8 +298,8 @@ async function analyseChunk(chunkFile, chunkIndex, chunkStartSec, currentSession
     id: `chunk-${chunkIndex}`,
     chunkIndex,
     startSec: chunkStartSec,
-    endSec: chunkStartSec + duration,
-    duration,
+    endSec: chunkStartSec + effectiveDur,
+    duration: effectiveDur,
     audioMean: loudness.mean,
     audioMax: loudness.max,
     audioScore: Math.round(audioScore),
@@ -259,15 +309,11 @@ async function analyseChunk(chunkFile, chunkIndex, chunkStartSec, currentSession
     totalChatCount,
     sampleChat: chatWindow.filter(m => m.funny).slice(-3).map(m => m.text),
     file: path.basename(chunkFile),
-    isHighlight: totalScore >= 35,
+    isHighlight: totalScore >= 25 || loudness.max >= -15 || funnyChatCount >= 2,
   };
 
   currentSession.chunks.push(moment);
   broadcast({ type: 'chunk', moment });
-
-  if (moment.isHighlight) {
-    broadcast({ type: 'highlight', moment });
-  }
 
   return moment;
 }
@@ -317,18 +363,20 @@ async function startLiveSession(rawUrl) {
   const ytdlpBin = ytdlp();
   const chunkTemplate = path.join(dir, 'chunk-%03d.mp4');
 
+  // Stream video and audio with 20-second fast chunks
+  const CHUNK_SECS = 20;
+
   const ytdlpProc = spawn(ytdlpBin, [
     '--no-warnings',
     '--ignore-config',
     '--no-playlist',
     ...YOUTUBE_CLIENT_ARGS,
-    '-f', 'worstaudio[ext=m4a]/worstaudio/bestaudio/best',
+    '-f', 'worst/b/best',
     '--no-part',
     '-o', '-',
     cleanUrl,
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-  const CHUNK_SECS = 60;
   const ffmpegProc = spawn('ffmpeg', [
     '-i', 'pipe:0',
     '-f', 'segment',
@@ -345,7 +393,8 @@ async function startLiveSession(rawUrl) {
 
   session.processes.push(ytdlpProc, ffmpegProc);
 
-  let lastKnownChunk = -1;
+  const analysedChunks = new Set();
+  const chunkSizes = new Map();
 
   const watchInterval = setInterval(async () => {
     const s = session;
@@ -354,27 +403,40 @@ async function startLiveSession(rawUrl) {
     s.elapsed = Math.round((Date.now() - s.startedAt) / 1000);
     broadcast({ type: 'tick', elapsed: s.elapsed });
 
-    let files;
+    let files = [];
     try {
       files = fs.readdirSync(dir)
         .filter(f => /^chunk-\d+\.mp4$/.test(f))
         .sort();
     } catch { return; }
 
-    const toAnalyse = files.slice(0, Math.max(0, files.length - 1));
-    for (const file of toAnalyse) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const idx = parseInt(file.match(/chunk-(\d+)/)[1]);
-      if (idx <= lastKnownChunk) continue;
-      lastKnownChunk = idx;
+      if (analysedChunks.has(idx)) continue;
+
       const chunkPath = path.join(dir, file);
-      const startSec = idx * CHUNK_SECS;
       try {
-        await analyseChunk(chunkPath, idx, startSec, s);
+        const stat = fs.statSync(chunkPath);
+        const prevSize = chunkSizes.get(idx) || 0;
+        chunkSizes.set(idx, stat.size);
+
+        // A chunk is ready to analyse if:
+        // 1. A subsequent chunk already exists (meaning this chunk was closed), OR
+        // 2. Its size is > 50KB and hasn't changed across checks
+        const hasNext = i < files.length - 1;
+        const sizeStable = stat.size > 50000 && stat.size === prevSize;
+
+        if (hasNext || sizeStable) {
+          analysedChunks.add(idx);
+          const startSec = idx * CHUNK_SECS;
+          await analyseChunk(chunkPath, idx, startSec, s);
+        }
       } catch (e) {
-        console.warn(`Chunk ${idx} analysis failed:`, e.message);
+        console.warn(`Chunk ${idx} error:`, e.message);
       }
     }
-  }, 3000);
+  }, 2000);
 
   session.watchInterval = watchInterval;
 
@@ -511,7 +573,7 @@ export function setupLiveRoutes(app) {
       const thumbFile = path.join(projDir, 'thumb.jpg');
       spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-ss', '1', '-i', destFile, '-frames:v', '1', '-vf', 'scale=-2:360', '-q:v', '4', thumbFile]);
 
-      const duration = chunk.duration || 60;
+      const duration = chunk.duration || 20;
       const momentId = 'm' + Math.random().toString(36).slice(2, 8);
 
       const projJson = {
