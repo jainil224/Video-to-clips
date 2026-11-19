@@ -149,13 +149,24 @@
       border-radius: 10px;
       padding: 12px 16px;
       color: #fff;
-      font-size: 15px;
+      font-size: 14px;
       outline: none;
       transition: border-color 0.2s;
     }
     .live-input-box input:focus {
       border-color: #ec4899;
       box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+    }
+    .live-hint-text {
+      font-size: 12px;
+      color: #9d95ba;
+      margin-top: 8px;
+    }
+    .live-hint-text code {
+      color: #ec4899;
+      background: rgba(236, 72, 153, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
     .live-btn-primary {
       background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
@@ -387,9 +398,12 @@
         <div class="live-card">
           <div class="live-card-title">🔴 Paste Live Stream Link</div>
           <div class="live-input-box">
-            <input id="live-url-input" type="url" placeholder="Paste YouTube Live, Twitch or Kick stream link..." />
+            <input id="live-url-input" type="url" placeholder="https://www.youtube.com/watch?v=... or https://youtube.com/live/..." />
             <button id="btn-start-live" class="live-btn-primary">▶ Start Live Monitor</button>
             <button id="btn-stop-live" class="live-btn-danger" style="display:none">■ Stop</button>
+          </div>
+          <div class="live-hint-text">
+            💡 Tip: Open the specific live stream on YouTube or Twitch, then copy its link (e.g. <code>https://www.youtube.com/watch?v=XXXX</code> or <code>https://www.youtube.com/live/XXXX</code>).
           </div>
 
           <div id="live-stream-details">
@@ -473,17 +487,14 @@
     }
   }
 
-  // Poll for topbar presence
   setInterval(injectLiveButton, 500);
 
-  // Format time helper
   function fmtTime(sec) {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  // Connect SSE
   function connectSSE() {
     if (eventSource) eventSource.close();
     eventSource = new EventSource('/api/live/events');
@@ -613,14 +624,21 @@
 
   // Start live monitoring button
   document.getElementById('btn-start-live').onclick = async () => {
-    const url = document.getElementById('live-url-input').value.trim();
-    if (!url) return alert('Please enter a live stream URL.');
+    const rawUrl = document.getElementById('live-url-input').value.trim();
+    if (!rawUrl) {
+      return alert('Please enter a live stream URL (e.g. https://www.youtube.com/watch?v=... or https://youtube.com/live/...).');
+    }
+
+    // Client-side quick check for homepage
+    if (/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/?$/i.test(rawUrl)) {
+      return alert('You entered the YouTube homepage (youtube.com). Please paste a link to an actual live stream video (e.g. https://www.youtube.com/watch?v=... or https://youtube.com/live/...).');
+    }
 
     hlCount = 0; msgCount = 0; funCount = 0;
     document.getElementById('stat-hl-count').textContent = '0';
     document.getElementById('stat-msg-count').textContent = '0';
     document.getElementById('stat-fun-count').textContent = '0';
-    document.getElementById('live-moment-list').innerHTML = '<div style="text-align:center;padding:24px 10px;color:#857c9c;font-size:13px">Monitoring stream... highlights will appear shortly.</div>';
+    document.getElementById('live-moment-list').innerHTML = '<div style="text-align:center;padding:24px 10px;color:#857c9c;font-size:13px">Connecting to stream...</div>';
     document.getElementById('live-status-text').textContent = 'Connecting...';
 
     connectSSE();
@@ -629,7 +647,7 @@
       const res = await fetch('/api/live/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: rawUrl }),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Failed to connect');
@@ -650,7 +668,6 @@
   window.addEventListener('submit', (e) => {
     const input = document.querySelector('input[type="url"], input[type="text"]');
     if (input && input.value && (/youtube\.com\/live/i.test(input.value) || /live/i.test(input.value) || /twitch\.tv/i.test(input.value))) {
-      // User entered a live stream link in the main page
       openLiveModal(input.value);
     }
   }, true);

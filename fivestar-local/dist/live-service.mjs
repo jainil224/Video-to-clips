@@ -31,7 +31,51 @@ function ytdlp() {
   if (fs.existsSync(YTDLP_PATH)) return YTDLP_PATH;
   const r = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['yt-dlp'], { encoding: 'utf8' });
   if (r.status === 0) return r.stdout.trim().split(/\r?\n/)[0];
-  throw new Error('yt-dlp not found.');
+  throw new Error('yt-dlp not found. Run npm run setup');
+}
+
+function validateStreamUrl(rawUrl) {
+  let parsed;
+  try {
+    let clean = rawUrl.trim();
+    if (!/^https?:\/\//i.test(clean)) clean = `https://${clean}`;
+    parsed = new URL(clean);
+  } catch {
+    throw new Error('Please enter a valid web URL (e.g. https://www.youtube.com/watch?v=... or https://youtube.com/live/...).');
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  const pathParts = parsed.pathname.split('/').filter(Boolean);
+
+  if (/youtube\.com$/i.test(host) || /youtu\.be$/i.test(host)) {
+    if (pathParts.length === 0) {
+      throw new Error('You pasted the YouTube homepage (youtube.com). Please open a specific live stream and copy its link from your browser.');
+    }
+    const first = pathParts[0]?.toLowerCase() || '';
+    if (first === 'results' || first === 'search') {
+      throw new Error('That is a search results page. Click on the stream you want to watch, then copy and paste its link.');
+    }
+    if (first === 'feed' || first === 'explore') {
+      throw new Error('That is a YouTube feed page. Open a specific stream and paste its link.');
+    }
+    if (first === 'playlist') {
+      throw new Error('That link is a playlist. Please open an individual stream and copy its link.');
+    }
+  }
+
+  return parsed.toString();
+}
+
+function cleanYtdlpError(errStr) {
+  const lines = errStr.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean);
+  const found = lines.reverse().find(l => /error/i.test(l)) || lines[0] || 'Unknown error';
+  const cleaned = found.replace(/^ERROR:\s*/i, '').trim();
+
+  if (/private video/i.test(cleaned)) return 'This video/stream is private.';
+  if (/members-only/i.test(cleaned)) return 'This stream is for channel members only.';
+  if (/unavailable|removed/i.test(cleaned)) return 'This stream is unavailable or ended.';
+  if (/not a valid url/i.test(cleaned)) return 'That link is not a valid video stream URL.';
+  return cleaned || 'Could not access the stream.';
 }
 
 function ffmpegLoudness(filePath) {
@@ -81,12 +125,24 @@ function getVideoInfo(url) {
       url
     ], { stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
+    let err = '';
     p.stdout.on('data', d => out += d);
+    p.stderr.on('data', d => err += d);
     p.on('close', code => {
-      if (code !== 0) return reject(new Error('Could not read stream info. Check if the link is accessible.'));
-      try { resolve(JSON.parse(out)); } catch { reject(new Error('Bad response from stream service')); }
+      if (code !== 0) {
+        return reject(new Error(cleanYtdlpError(err)));
+      }
+      try {
+        const json = JSON.parse(out);
+        if (json._type === 'playlist') {
+          return reject(new Error('That link is a channel, feed or playlist. Please open the specific stream or video and paste its URL.'));
+        }
+        resolve(json);
+      } catch {
+        reject(new Error('Received invalid data from stream service. Please try again.'));
+      }
     });
-    p.on('error', reject);
+    p.on('error', (e) => reject(new Error('Failed to run stream downloader: ' + e.message)));
   });
 }
 
@@ -211,7 +267,9 @@ async function analyseChunk(chunkFile, chunkIndex, chunkStartSec, currentSession
   return moment;
 }
 
-async function startLiveSession(url) {
+async function startLiveSession(rawUrl) {
+  const cleanUrl = validateStreamUrl(rawUrl);
+
   if (session) await stopLiveSession();
 
   const id = `live-${Date.now()}`;
@@ -221,7 +279,7 @@ async function startLiveSession(url) {
   broadcast({ type: 'status', state: 'connecting', msg: 'Connecting to live stream...' });
   let info;
   try {
-    info = await getVideoInfo(url);
+    info = await getVideoInfo(cleanUrl);
   } catch (e) {
     broadcast({ type: 'status', state: 'error', msg: e.message });
     throw e;
@@ -233,7 +291,7 @@ async function startLiveSession(url) {
   const thumb = info.thumbnail || info.thumbnails?.at(-1)?.url || '';
 
   session = {
-    id, url, dir,
+    id, url: cleanUrl, dir,
     title, channel, thumb, isLive,
     startedAt: Date.now(),
     elapsed: 0,
@@ -248,7 +306,7 @@ async function startLiveSession(url) {
   broadcast({ type: 'info', title, channel, thumb, isLive });
   broadcast({ type: 'status', state: 'recording', msg: isLive ? 'Monitoring live stream in real-time...' : 'Monitoring stream...' });
 
-  const chatProc = startChatMonitor(url, id);
+  const chatProc = startChatMonitor(cleanUrl, id);
   if (chatProc) session.processes.push(chatProc);
 
   const ytdlpBin = ytdlp();
@@ -261,7 +319,7 @@ async function startLiveSession(url) {
     '-f', 'worstaudio[ext=m4a]/worstaudio/bestaudio/best',
     '--no-part',
     '-o', '-',
-    url,
+    cleanUrl,
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
   const CHUNK_SECS = 60;
@@ -379,11 +437,11 @@ export function setupLiveRoutes(app) {
   app.post('/api/live/start', async (req, res) => {
     try {
       const { url } = req.body || {};
-      if (!url) return res.status(400).json({ error: 'url is required' });
+      if (!url) return res.status(400).json({ error: 'Please paste a stream URL.' });
       const current = await startLiveSession(url);
       res.json({ ok: true, session: { id: current.id, title: current.title, isLive: current.isLive } });
     } catch (e) {
-      res.status(500).json({ error: e.message });
+      res.status(400).json({ error: e.message });
     }
   });
 
@@ -449,7 +507,6 @@ export function setupLiveRoutes(app) {
 
       const duration = chunk.duration || 60;
       const momentId = 'm' + Math.random().toString(36).slice(2, 8);
-      const clipId = 'c' + Math.random().toString(36).slice(2, 8);
 
       const projJson = {
         id: projId,
