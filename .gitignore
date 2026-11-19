@@ -1,0 +1,13 @@
+# Dependencies and generated toolchains
+node_modules/
+.tools/
+
+# User state & projects
+data/
+*.log
+backups/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini

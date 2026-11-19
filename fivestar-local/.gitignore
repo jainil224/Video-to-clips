@@ -1,0 +1,16 @@
+# Dependencies and generated toolchains (platform-specific - never commit)
+node_modules/
+.tools/
+
+# User state: projects, media, cached models, settings.json (may contain browser cookies)
+data/
+
+# Logs, backups, secrets
+*.log
+backups/
+deploy/**/*.pem
+deploy/**/*.key
+
+# OS noise
+.DS_Store
+Thumbs.db

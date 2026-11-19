@@ -1,0 +1,19 @@
+[
+  { "family": "Montserrat Black", "file": "Montserrat-Black.ttf", "url": "https://cdn.jsdelivr.net/fontsource/fonts/montserrat@latest/latin-900-normal.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Poppins ExtraBold", "file": "Poppins-ExtraBold.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-ExtraBold.ttf", "scripts": ["latin", "devanagari"], "license": "OFL" },
+  { "family": "Poppins SemiBold", "file": "Poppins-SemiBold.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-SemiBold.ttf", "scripts": ["latin", "devanagari"], "license": "OFL" },
+  { "family": "Anton", "file": "Anton-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/anton/Anton-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Bangers", "file": "Bangers-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/bangers/Bangers-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Bebas Neue", "file": "BebasNeue-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Luckiest Guy", "file": "LuckiestGuy-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/apache/luckiestguy/LuckiestGuy-Regular.ttf", "scripts": ["latin"], "license": "Apache-2.0" },
+  { "family": "Archivo Black", "file": "ArchivoBlack-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/archivoblack/ArchivoBlack-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Titan One", "file": "TitanOne-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/titanone/TitanOne-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Lilita One", "file": "LilitaOne-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lilitaone/LilitaOne-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Russo One", "file": "RussoOne-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/russoone/RussoOne-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Black Ops One", "file": "BlackOpsOne-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/blackopsone/BlackOpsOne-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Bungee", "file": "Bungee-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/bungee/Bungee-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Permanent Marker", "file": "PermanentMarker-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/apache/permanentmarker/PermanentMarker-Regular.ttf", "scripts": ["latin"], "license": "Apache-2.0" },
+  { "family": "Press Start 2P", "file": "PressStart2P-Regular.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/pressstart2p/PressStart2P-Regular.ttf", "scripts": ["latin"], "license": "OFL" },
+  { "family": "Rajdhani Bold", "file": "Rajdhani-Bold.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/rajdhani/Rajdhani-Bold.ttf", "scripts": ["latin", "devanagari"], "license": "OFL" },
+  { "family": "Mukta ExtraBold", "file": "Mukta-ExtraBold.ttf", "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/mukta/Mukta-ExtraBold.ttf", "scripts": ["latin", "devanagari"], "license": "OFL" }
+]

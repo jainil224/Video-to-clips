@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fivestar · Local setup</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#e8edf5;background:#0c111b;color-scheme:dark}*{box-sizing:border-box}body{margin:0}main{max-width:960px;margin:auto;padding:54px 24px}header{margin-bottom:38px}.eyebrow{color:#99e6b4;font-size:13px;letter-spacing:.16em;font-weight:700}h1{font-size:clamp(36px,6vw,60px);line-height:1.08;margin:16px 0}p,li{line-height:1.65;color:#b9c5d6}h2{font-size:23px;margin-top:0}section{border:1px solid #293449;background:#131c2b;border-radius:18px;padding:26px;margin:20px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.grid section{margin:0}a{color:#99e6b4}code,pre{font-family:ui-monospace,monospace}pre{padding:18px;background:#0b111c;border-radius:10px;overflow:auto;line-height:1.8}button,.link{display:inline-block;border:0;border-radius:9px;padding:13px 19px;background:#a5efbf;color:#102318;font:inherit;font-weight:700;cursor:pointer}button:disabled{opacity:.6;cursor:wait}button:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:4px}.muted{font-size:14px}.check{padding:15px 0;border-bottom:1px solid #293449}.check strong{display:block}.check p{margin:5px 0;overflow-wrap:anywhere}.pass{color:#99e6b4}.fail{color:#ffbd97}#summary{font-weight:700}footer{color:#9caabd;margin-top:28px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:30px 16px}section{padding:20px}}
+</style>
+</head>
+<body><main>
+<header><span class="eyebrow">FIVESTAR / SETUP GUIDE</span><h1>From source code<br>to your first clip.</h1><p>Install the tools, prepare the project, and check that your computer is ready to run Fivestar locally.</p></header>
+<section><h2>1. Install the essentials</h2><ul>
+<li><a href="https://nodejs.org/en/download">Node.js 22.12 or newer</a>, including npm. The project’s <code>.nvmrc</code> selects Node 22; with nvm installed, run <code>nvm install &amp;&amp; nvm use</code>.</li>
+<li><a href="https://www.python.org/downloads/">Python 3</a> with pip and venv support, used to install the stream downloader.</li>
+<li><a href="https://ffmpeg.org/download.html">FFmpeg</a>, including <code>ffmpeg</code> and <code>ffprobe</code>, available on your PATH.</li>
+<li>A modern browser and an internet connection for dependencies, setup downloads, and online streams.</li>
+</ul><div class="grid"><div><h3>macOS</h3><p>With Homebrew already installed:</p><pre>brew install node@22 python ffmpeg</pre><p class="muted">Follow Homebrew’s PATH instructions for Node 22, then reopen your terminal.</p></div><div><h3>Windows / Linux</h3><p>Windows: install Node.js and Python, then follow the FFmpeg download instructions and add its <code>bin</code> folder to PATH. Use WSL2 for the app’s POSIX shell commands.</p><p>Ubuntu / Debian / WSL:</p><pre>sudo apt update
+sudo apt install python3 python3-venv python3-pip ffmpeg</pre><p class="muted">Install Node.js 22.12+ separately; the distribution’s default Node package may be older.</p></div></div></section>
+<div class="grid"><section><h2>2. Prepare the project</h2><p>Open a terminal in the extracted project folder containing <code>package.json</code>. Run:</p><pre>npm ci
+npm run setup</pre><p>Setup installs yt-dlp in <code>.tools/venv</code>, downloads caption fonts, and prepares starter sounds and stickers. It is safe to rerun.</p><p>No accounts, API keys, environment files, or subscription setup are needed. Preferences are saved locally in <code>data/settings.json</code>.</p></section>
+<section><h2>3. Check your installation</h2><p>Start the checker from the project folder, even before installing app dependencies:</p><pre>node dist/setup-guide.mjs</pre><p>Open <a href="http://127.0.0.1:5180">http://127.0.0.1:5180</a>, then press the button. Checks inspect this computer; they do not install anything.</p><button id="check" type="button">Check installation</button><div id="results" aria-live="polite" aria-busy="false"><p id="summary">Installation has not been checked.</p><div id="checks"></div></div></section></div>
+<section><h2>4. Run locally</h2><p>Once checks pass, open another terminal in the project folder:</p><pre>npm start</pre><p>This starts the prebuilt app; no source code or build tools are needed. Open <a href="http://localhost:5177">http://localhost:5177</a>. Leave the terminal running; press <code>Ctrl+C</code> to stop.</p><p>The prebuilt backend serves the browser app and API together on port 5177. No separate frontend server or build command is needed.</p></section>
+<section><h2>If something needs fixing</h2><ul><li><strong>Command not found:</strong> install the named tool, check PATH, and restart the terminal and checker.</li><li><strong>Missing packages or assets:</strong> rerun <code>npm ci</code> and <code>npm run setup</code>, then check again.</li><li><strong>Stream links stopped working:</strong> run <code>npm run setup -- --update</code> to refresh yt-dlp.</li><li><strong>Port already in use:</strong> stop the previous process. To move the guide, use <code>SETUP_GUIDE_PORT=5181 node dist/setup-guide.mjs</code> in a POSIX shell and open the printed URL.</li></ul><p>For features and advanced configuration, read <code>README.md</code> in the project folder.</p></section><footer>Everything runs on your computer. The first use of some AI features may download additional models.</footer>
+</main><script>
+const button = document.getElementById('check');
+const results = document.getElementById('results');
+const summary = document.getElementById('summary');
+const list = document.getElementById('checks');
+button.addEventListener('click', async () => {
+  button.disabled = true; results.setAttribute('aria-busy', 'true'); list.replaceChildren();
+  summary.className = ''; summary.textContent = 'Checking tools and project files…';
+  try {
+    if (location.protocol === 'file:') throw new Error('Open this guide through the local checker: run node dist/setup-guide.mjs, then visit http://127.0.0.1:5180. A browser cannot inspect installed tools from a file.');
+    const response = await fetch('/api/check', { cache: 'no-store', signal: AbortSignal.timeout(90000) });
+    if (!response.ok) throw new Error('The checker is unavailable. Start node dist/setup-guide.mjs and open the URL it prints.');
+    const data = await response.json();
+    summary.className = data.ready ? 'pass' : 'fail';
+    summary.textContent = data.ready ? 'Ready to run — use npm start in another terminal.' : 'Setup needs attention — fix the items below and check again.';
+    for (const item of data.checks) {
+      const row = document.createElement('div'); row.className = 'check';
+      const title = document.createElement('strong'); title.className = item.ok ? 'pass' : 'fail'; title.textContent = `${item.ok ? '✓ Installed' : '○ Needs attention'} · ${item.name}`;
+      const detail = document.createElement('p'); detail.className = 'muted'; detail.textContent = item.detail;
+      row.append(title, detail);
+      if (!item.ok) { const fix = document.createElement('p'); fix.textContent = item.fix; row.append(fix); }
+      list.append(row);
+    }
+  } catch (error) { summary.className = 'fail'; summary.textContent = error.message; }
+  finally { button.disabled = false; results.setAttribute('aria-busy', 'false'); }
+});
+</script></body></html>

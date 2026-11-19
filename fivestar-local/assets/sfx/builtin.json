@@ -1,0 +1,109 @@
+[
+  {
+    "id": "boom", "name": "Bass boom", "category": "impact", "file": "boom.wav",
+    "triggers": [], "tags": ["boom", "impact", "hit", "vine"],
+    "lavfi": "aevalsrc=exprs='(0.8*sin(2*PI*(46*t+(40/7)*(1-exp(-7*t))))+0.3*sin(4*PI*(46*t+(40/7)*(1-exp(-7*t))))+0.15*sin(6*PI*(46*t+(40/7)*(1-exp(-7*t)))))*exp(-2.6*t)+0.35*(random(0)-0.5)*exp(-70*t)':s=48000:d=1.8",
+    "af": "asoftclip=type=tanh,lowpass=f=1100,aecho=0.8:0.6:45|95:0.28|0.16,afade=t=out:st=1.25:d=0.55"
+  },
+  {
+    "id": "whoosh", "name": "Whoosh", "category": "transition", "file": "whoosh.wav",
+    "triggers": [], "tags": ["whoosh", "swoosh", "transition"],
+    "lavfi": "anoisesrc=d=0.8:c=pink:r=48000:a=0.9",
+    "af": "bandpass=f=1700:width_type=o:w=2.4,volume='pow(sin(PI*t/0.8),3)':eval=frame,aphaser=type=t:speed=1.6:decay=0.45"
+  },
+  {
+    "id": "pop", "name": "Pop", "category": "ui", "file": "pop.wav",
+    "triggers": [], "tags": ["pop", "blip"],
+    "lavfi": "aevalsrc=exprs='0.9*sin(2*PI*(230*t+(900/30)*(1-exp(-30*t))))*exp(-22*t)':s=48000:d=0.25",
+    "af": "afade=t=in:d=0.003,afade=t=out:st=0.18:d=0.07"
+  },
+  {
+    "id": "ding", "name": "Ding", "category": "ui", "file": "ding.wav",
+    "triggers": ["yes", "got it", "easy", "perfect"], "tags": ["ding", "bell", "correct"],
+    "lavfi": "aevalsrc=exprs='0.5*(sin(2*PI*1318.5*t)+0.6*sin(2*PI*2637*t)+0.3*sin(2*PI*3955.5*t)+0.15*sin(2*PI*5274*t))*exp(-4.5*t)':s=48000:d=1.4",
+    "af": "afade=t=in:d=0.002,afade=t=out:st=1.0:d=0.4"
+  },
+  {
+    "id": "riser", "name": "Riser", "category": "transition", "file": "riser.wav",
+    "triggers": ["wait for it", "watch this"], "tags": ["riser", "build", "tension"],
+    "lavfi": "aevalsrc=exprs='(0.25+0.75*t/1.6)*(0.6*sin(2*PI*111.19*(exp(1.6189*t)-1))+0.3*sin(3*PI*111.19*(exp(1.6189*t)-1)))+0.5*pow(t/1.6,2)*(random(0)-0.5)':s=48000:d=1.6",
+    "af": "tremolo=f=14:d=0.35,afade=t=in:d=0.05,afade=t=out:st=1.56:d=0.04"
+  },
+  {
+    "id": "bass-drop", "name": "Bass drop", "category": "impact", "file": "bass-drop.wav",
+    "triggers": [], "tags": ["drop", "bass", "sub"],
+    "lavfi": "aevalsrc=exprs='(0.85*sin(2*PI*(38*t+(170/2.2)*(1-exp(-2.2*t))))+0.25*sin(4*PI*(38*t+(170/2.2)*(1-exp(-2.2*t)))))*exp(-1.1*t)':s=48000:d=2.2",
+    "af": "asoftclip=type=tanh,lowpass=f=500,afade=t=in:d=0.004,afade=t=out:st=1.6:d=0.6"
+  },
+  {
+    "id": "beep", "name": "Censor beep", "category": "ui", "file": "beep.wav",
+    "triggers": [], "tags": ["beep", "censor", "bleep"],
+    "lavfi": "sine=f=1000:r=48000:d=0.45",
+    "af": "afade=t=in:d=0.008,afade=t=out:st=0.44:d=0.01"
+  },
+  {
+    "id": "shutter", "name": "Camera shutter", "category": "ui", "file": "shutter.wav",
+    "triggers": ["screenshot", "clip that", "clip it"], "tags": ["camera", "shutter", "click"],
+    "lavfi": "aevalsrc=exprs='1.6*(random(0)-0.5)*(exp(-90*t)+0.8*exp(-90*abs(t-0.09))*gt(t,0.09))':s=48000:d=0.22",
+    "af": "highpass=f=1500,afade=t=out:st=0.18:d=0.04"
+  },
+  {
+    "id": "fail-horn", "name": "Fail horn", "category": "meme", "file": "fail-horn.wav",
+    "triggers": ["i died", "i'm dead", "wasted", "oh no", "failed", "game over"], "tags": ["fail", "sad", "trombone", "wasted"],
+    "lavfi": "aevalsrc=exprs='st(0,if(lt(t,0.32),233.08,if(lt(t,0.64),220,if(lt(t,0.96),207.65,196))));st(1,if(lt(t,0.96),mod(t,0.32),t-0.96));st(2,if(lt(t,0.96),(1-exp(-80*ld(1)))*min(1,(0.32-ld(1))/0.03),(1-exp(-80*ld(1)))*exp(-0.9*ld(1))*(1+0.25*sin(2*PI*5.5*ld(1)))));st(3,2*PI*ld(0)*t);0.34*ld(2)*(sin(ld(3))+0.5*sin(2*ld(3))+0.33*sin(3*ld(3))+0.25*sin(4*ld(3))+0.2*sin(5*ld(3)))':s=48000:d=2.0",
+    "af": "lowpass=f=3200,aecho=0.8:0.5:40:0.2,afade=t=out:st=1.6:d=0.4"
+  },
+  {
+    "id": "level-up", "name": "Level up", "category": "meme", "file": "level-up.wav",
+    "triggers": ["let's go", "lets go", "we did it", "i won", "victory", "mission passed"], "tags": ["win", "8bit", "level", "success"],
+    "lavfi": "aevalsrc=exprs='st(0,if(lt(t,0.09),523.25,if(lt(t,0.18),659.25,if(lt(t,0.27),783.99,1046.5))));st(1,if(lt(t,0.27),1,exp(-5*(t-0.27))));0.28*ld(1)*(gt(sin(2*PI*ld(0)*t),0)*2-1)':s=48000:d=0.75",
+    "af": "lowpass=f=5200,afade=t=in:d=0.003,afade=t=out:st=0.6:d=0.15"
+  },
+  {
+    "id": "air-horn", "name": "Air horn", "category": "meme", "file": "air-horn.wav",
+    "triggers": ["insane", "crazy", "clutch"], "tags": ["airhorn", "horn", "mlg", "hype"],
+    "lavfi": "aevalsrc=exprs='st(0,if(lt(t,0.14),1,if(lt(t,0.2),0,if(lt(t,0.34),1,if(lt(t,0.4),0,if(lt(t,0.54),1,if(lt(t,0.6),0,exp(-1.4*(t-0.6)))))))));st(1,2*PI*466.16*t);st(2,2*PI*470.3*t);0.2*ld(0)*(sin(ld(1))+0.5*sin(2*ld(1))+0.33*sin(3*ld(1))+0.25*sin(4*ld(1))+0.2*sin(5*ld(1))+0.16*sin(6*ld(1))+sin(ld(2))+0.5*sin(2*ld(2))+0.33*sin(3*ld(2))+0.25*sin(4*ld(2)))':s=48000:d=1.5",
+    "af": "asoftclip=type=tanh,aecho=0.8:0.5:55:0.22,afade=t=out:st=1.2:d=0.3"
+  },
+  {
+    "id": "glitch", "name": "Glitch", "category": "transition", "file": "glitch.wav",
+    "triggers": [], "tags": ["glitch", "static", "error"],
+    "lavfi": "anoisesrc=d=0.32:c=white:r=48000:a=0.7",
+    "af": "acrusher=bits=4:mix=1:mode=log:samples=24,tremolo=f=38:d=0.9,highpass=f=300,afade=t=out:st=0.27:d=0.05"
+  },
+  {
+    "id": "omg", "name": "Oh my god", "category": "voice", "file": "omg.wav",
+    "triggers": ["oh my god", "oh my gosh", "omg", "oh my"], "tags": ["omg", "voice", "reaction"],
+    "say": { "text": "Oh my God!", "voice": "Fred", "rate": 175, "pitch": 1.0 }
+  },
+  {
+    "id": "nice", "name": "Nice", "category": "voice", "file": "nice.wav",
+    "triggers": ["nice", "good one", "beautiful"], "tags": ["nice", "noice", "voice"],
+    "say": { "text": "Nice!", "voice": "Fred", "rate": 150, "pitch": 0.88 }
+  },
+  {
+    "id": "faah", "name": "Faaah", "category": "voice", "file": "faah.wav",
+    "triggers": ["what the", "damn", "holy"], "tags": ["faah", "fah", "scream", "voice"],
+    "say": { "text": "Faaaaaaaaah!", "voice": "Albert", "rate": 120, "pitch": 1.18 }
+  },
+  {
+    "id": "bruh", "name": "Bruh", "category": "voice", "file": "bruh.wav",
+    "triggers": ["bro", "bruh", "seriously", "really"], "tags": ["bruh", "voice"],
+    "say": { "text": "Bruh.", "voice": "Fred", "rate": 130, "pitch": 0.72 }
+  },
+  {
+    "id": "what", "name": "Whaaat", "category": "voice", "file": "what.wav",
+    "triggers": ["what", "wait what", "how"], "tags": ["what", "confused", "voice"],
+    "say": { "text": "Whaaaat?!", "voice": "Fred", "rate": 150, "pitch": 1.25 }
+  },
+  {
+    "id": "no-way", "name": "No way", "category": "voice", "file": "no-way.wav",
+    "triggers": ["no way", "impossible", "unbelievable", "no no no"], "tags": ["noway", "voice"],
+    "say": { "text": "No way!", "voice": "Fred", "rate": 165, "pitch": 1.05 }
+  },
+  {
+    "id": "wow", "name": "Wow", "category": "voice", "file": "wow.wav",
+    "triggers": ["wow", "whoa", "woah", "amazing"], "tags": ["wow", "voice"],
+    "say": { "text": "Wow!", "voice": "Fred", "rate": 120, "pitch": 0.95 }
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "name": "fivestar-local",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Fivestar local app — prebuilt runtime",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "node dist/server.mjs",
+    "setup": "node dist/setup.mjs",
+    "guide": "node dist/setup-guide.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "4.3.2",
+    "@napi-rs/canvas": "1.1.1",
+    "express": "5.3.0",
+    "multer": "2.5.0"
+  }
+}
