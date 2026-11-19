@@ -18,6 +18,7 @@ fs.mkdirSync(TMP_DIR, { recursive: true });
 fs.mkdirSync(PROJECTS_DIR, { recursive: true });
 
 let session = null;
+let lastSession = null;   // kept after stop so clips can still be imported
 const sseClients = new Set();
 
 function broadcast(obj) {
@@ -323,6 +324,12 @@ async function startLiveSession(rawUrl) {
 
   if (session) await stopLiveSession();
 
+  // Clean up the previous session's temp files now that a new session is starting
+  if (lastSession) {
+    try { fs.rmSync(lastSession.dir, { recursive: true, force: true }); } catch {}
+    lastSession = null;
+  }
+
   const id = `live-${Date.now()}`;
   const dir = path.join(TMP_DIR, id);
   fs.mkdirSync(dir, { recursive: true });
@@ -455,12 +462,14 @@ async function stopLiveSession() {
   if (!session) return;
   const s = session;
   session = null;
+  lastSession = s;      // keep reference so "Open in Editor" still works after stop
   clearInterval(s.watchInterval);
   for (const p of s.processes) {
     try { p.kill('SIGKILL'); } catch {}
   }
   broadcast({ type: 'status', state: 'stopped', msg: 'Session stopped.' });
-  try { fs.rmSync(s.dir, { recursive: true, force: true }); } catch {}
+  // NOTE: we intentionally do NOT delete s.dir here — files stay so import still works.
+  // Dir is deleted when the NEXT session starts (inside startLiveSession → if(session) await stopLiveSession).
 }
 
 function formatTime(sec) {
@@ -536,7 +545,7 @@ export function setupLiveRoutes(app) {
   // Download raw clip
   app.get('/api/live/clip/:chunkId', (req, res) => {
     const { chunkId } = req.params;
-    const s = session;
+    const s = session || lastSession;
     if (!s) return res.status(404).send('No active session');
     const chunk = s.chunks.find(c => c.id === chunkId);
     if (!chunk) return res.status(404).send('Chunk not found');
@@ -555,8 +564,8 @@ export function setupLiveRoutes(app) {
   // Import directly to Fivestar Project
   app.post('/api/live/import', async (req, res) => {
     const { chunkId } = req.body || {};
-    const s = session;
-    if (!s) return res.status(400).json({ error: 'No active session' });
+    const s = session || lastSession;   // works even after session is stopped
+    if (!s) return res.status(400).json({ error: 'No active session. Please start a live monitor first.' });
     const chunk = s.chunks.find(c => c.id === chunkId);
     if (!chunk) return res.status(404).json({ error: 'Chunk not found' });
     const srcFile = path.join(s.dir, chunk.file);
