@@ -4,6 +4,8 @@ This folder contains the prebuilt app. The backend serves the frontend too, so o
 and one local server are needed. There is no development source, build step, account, subscription,
 or environment file to configure.
 
+**Designed and coded by Jainil Patel**
+
 ## Why we built this
 
 Turning a long stream into short clips is slow, repetitive work. A creator has to watch hours of footage, guess which moments viewers actually enjoyed, note the timestamps, reframe each one to vertical, caption it, add sounds and write a title. Most of that is mechanical, and doing it by hand makes it easy to miss the parts that performed best.
@@ -22,7 +24,7 @@ Fivestar automates that judgement. It reads the signals the platform already rec
 
 ## UI overview
 
-Five screenshots showing the Fivestar interface, from the landing page through to the clip editor.
+Seven screenshots showing the Fivestar interface, from the landing page through to the clip editor.
 
 ### 1. Hero section
 
@@ -53,6 +55,18 @@ Generated clips with titles, export status and an **Edit** link for each one.
 The clip editor: timeline, captions, look presets, sounds, memes and publish options.
 
 ![Clip editor with timeline and caption controls](docs/screenshots/05-clip-editor.png)
+
+### 6. Moments list
+
+Moments ranked by heat score, each with the reason it was picked and a link to open its clip.
+
+![Ranked moments list with heat scores](docs/screenshots/06-moments-list.png)
+
+### 7. Publish
+
+The publish panel with export status, pre-post checks, and a ready title, description and hashtags.
+
+![Publish panel with title, description and hashtags](docs/screenshots/07-publish.png)
 
 ## Required tools
 
