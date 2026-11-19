@@ -4,6 +4,22 @@ This folder contains the prebuilt app. The backend serves the frontend too, so o
 and one local server are needed. There is no development source, build step, account, subscription,
 or environment file to configure.
 
+## Why we built this
+
+Turning a long stream into short clips is slow, repetitive work. A creator has to watch hours of footage, guess which moments viewers actually enjoyed, note the timestamps, reframe each one to vertical, caption it, add sounds and write a title. Most of that is mechanical, and doing it by hand makes it easy to miss the parts that performed best.
+
+Fivestar automates that judgement. It reads the signals the platform already records - the most-replayed graph, spikes in live chat, comments pointing at a timestamp, sudden loud reactions and the spoken transcript - and combines them into one heat score. The app then surfaces the strongest moments, explains why each one was picked, and cuts only those 30 to 60 second sections. It runs locally, so there is no account, no subscription and no monthly quota.
+
+## What it is used for
+
+- **Clip a long stream into Shorts, Reels or TikToks.** Paste a YouTube, Twitch or Kick link, or drop a local video file, and get a ranked list of moments worth publishing.
+- **Find the moments viewers reacted to.** The heat graph overlays comments, loudness and reactions so you can see where the audience actually engaged instead of scrubbing blindly.
+- **Create vertical clips with captions and effects.** Each clip is reframed to 9:16 with word-by-word captions, meme sounds, reaction effects, a title, description and hashtags.
+- **Edit before exporting.** Adjust timing, captions, look presets, fonts, colours and sounds in the clip editor, then export an MP4.
+- **Work on your own machine.** Projects, exports and cached models are stored in `data/` on your computer. You upload the finished clips yourself.
+
+> Fivestar is an independent tool, not affiliated with YouTube, Instagram, Twitch, Kick or Rockstar Games. Use media you own or have permission to use.
+
 ## UI overview
 
 Five screenshots showing the Fivestar interface, from the landing page through to the clip editor.
