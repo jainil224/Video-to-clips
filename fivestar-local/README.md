@@ -4,6 +4,40 @@ This folder contains the prebuilt app. The backend serves the frontend too, so o
 and one local server are needed. There is no development source, build step, account, subscription,
 or environment file to configure.
 
+## UI overview
+
+Five screenshots showing the Fivestar interface, from the landing page through to the clip editor.
+
+### 1. Hero section
+
+The landing page: paste a stream or video link, or drop a local file, then browse saved streams.
+
+![Fivestar hero section](docs/screenshots/01-hero-section.png)
+
+### 2. Add a YouTube link
+
+Paste a YouTube, Twitch or Kick link and choose **Find moments**.
+
+![YouTube link entered on the landing page](docs/screenshots/02-add-youtube-link.png)
+
+### 3. Editor - all graphs
+
+The analysis view shows the signal cards and the combined **Heat across the stream** graph with numbered peaks.
+
+![Editor showing the heat graph and signal cards](docs/screenshots/03-editor-all-graphs.png)
+
+### 4. Clips
+
+Generated clips with titles, export status and an **Edit** link for each one.
+
+![Clips list with export status and Edit links](docs/screenshots/04-clips.png)
+
+### 5. Clip editor
+
+The clip editor: timeline, captions, look presets, sounds, memes and publish options.
+
+![Clip editor with timeline and caption controls](docs/screenshots/05-clip-editor.png)
+
 ## Required tools
 
 - Node.js **22.12 or newer**, including npm.
